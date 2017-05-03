@@ -1,10 +1,31 @@
 import numpy as np
 
-def findStableState(L, boundaryConditions):
+def findMinv(L, boundaryConditions):
+	"""Given the Laplacian of a graph and its boundary conditions, returns the inverse of the M matrix
+	Calling this function once then using Minv many times should be faster than repeated calculations"""
+	n = L.shape[0]
+	m = len(boundaryConditions)
+	Vb = np.zeros(m)
+	for i in range(m):
+		condition = boundaryConditions[i]
+		Vb[i] = condition[0]
+	Vb = np.sort(Vb)
+	BPrime = np.zeros((m, n))
+	for i in range(m):
+		BPrime[i][int(Vb[i])] = 1
+
+	zeroCorner = np.zeros((m, m))
+	M = np.array(np.bmat([[L, -BPrime.T], [BPrime, zeroCorner]]))
+	Minv = np.linalg.inv(M)
+	return Minv
+
+def findStableState(L, boundaryConditions, Minv = None):
 	"""Given the Laplacian of a graph and boundary conditions, returns an nx3 matrix of stable state positions
 		L should be an the nxn Laplacian of the graph (a numpy array)
 		boundaryConditions should be a list of tuples, where each tuple contains the index of the vertex 
-			to be constrained (0 indexed) and a length-3 numpy array for the position it should be in"""
+			to be constrained (0 indexed) and a length-3 numpy array for the position it should be in
+		Minv should be the inverse of the M matrix (for saving on computation time)
+			if it is left as None, this function will compute Minv itself."""
 	n = L.shape[0]
 	m = len(boundaryConditions)
 	Vb = np.zeros(m)
@@ -20,9 +41,10 @@ def findStableState(L, boundaryConditions):
 		BPrime[i][int(Vb[i])] = 1
 		YPrime[i] = positions[Vb[i]]
 
-	zeroCorner = np.zeros((m, m))
-	M = np.array(np.bmat([[L, -BPrime.T], [BPrime, zeroCorner]]))
-	Minv = np.linalg.inv(M)
+	if not Minv:
+		zeroCorner = np.zeros((m, m))
+		M = np.array(np.bmat([[L, -BPrime.T], [BPrime, zeroCorner]]))
+		Minv = np.linalg.inv(M)
 
 	XT = np.zeros((3, n))
 	# find x coordinates
