@@ -41,7 +41,7 @@ def findStableState(L, boundaryConditions, Minv = None):
 		BPrime[i][int(Vb[i])] = 1
 		YPrime[i] = positions[Vb[i]]
 
-	if not Minv:
+	if Minv is None:
 		zeroCorner = np.zeros((m, m))
 		M = np.array(np.bmat([[L, -BPrime.T], [BPrime, zeroCorner]]))
 		Minv = np.linalg.inv(M)
