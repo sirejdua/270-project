@@ -87,7 +87,7 @@ def findOptimalTension(L, boundaryConditions, tensionPoint, cutPoint, tensionRad
 	tensionLocation = np.copy(tensionRest)
 	numIterations = 0
 	while numIterations < 3000 and np.linalg.norm(gradient) > 10**(-7):
-		tensionLocation -= (10**(-1)) * gradient # gradient ascent, not descent
+		tensionLocation += (10**(-1)) * gradient # gradient ascent, not descent
 		if np.linalg.norm(tensionLocation - tensionRest) > tensionRadius:
 			# might have to rescale the tensioning so it doesn't tension too far
 			diff = tensionLocation - tensionRest
