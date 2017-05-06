@@ -3,6 +3,7 @@ from stableState import findStableState as fss
 from stableState import findMinv as fmi
 
 import matplotlib.pyplot as plt
+import sys
 
 def findOptimalTension(L, boundaryConditions, tensionPoint, cutPoint, tensionRadius):
 	"""Uses gradient descent to find the best way of tensioning the given point
@@ -86,7 +87,9 @@ def findOptimalTension(L, boundaryConditions, tensionPoint, cutPoint, tensionRad
 	gradient = estimateGradient(tensionRest, Minv, MinvPrime)
 	tensionLocation = np.copy(tensionRest)
 	numIterations = 0
-	while numIterations < 3000 and np.linalg.norm(gradient) > 10**(-7):
+	while numIterations < 3000:
+		# shouldn't ever actually need 3000 iterations, but should have a hard cap of some sort
+		prevLocation = np.copy(tensionLocation)
 		tensionLocation += (10**(-1)) * gradient # gradient ascent, not descent
 		if np.linalg.norm(tensionLocation - tensionRest) > tensionRadius:
 			# might have to rescale the tensioning so it doesn't tension too far
@@ -95,6 +98,9 @@ def findOptimalTension(L, boundaryConditions, tensionPoint, cutPoint, tensionRad
 			tensionLocation = tensionRest + diff
 		gradient = estimateGradient(tensionLocation, Minv, MinvPrime)
 		numIterations += 1
+		if np.linalg.norm(tensionLocation - prevLocation) < 10**(-7):
+			print("Terminated after " + str(numIterations) + " iterations")
+			break
 
 	return tensionLocation
 
