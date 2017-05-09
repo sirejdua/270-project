@@ -17,11 +17,13 @@ def reduce_graph(L, Vb, num_clusters, cluster_algorithm=spectral_cluster):
 	cluster_assignments = cluster_algorithm(small_L, num_clusters).tolist()
 	num_clusters = max(cluster_assignments) + 1
 	i = 0
+	indexMapping = {} # map boundary points to their new indices
 	for v in sorted(Vb):
 		cluster_assignments.insert(v, num_clusters + i)
+		indexMapping[v] = num_clusters + i
 		i += 1
 	clustered_graph = redrawGraph(L,cluster_assignments)
-	return clustered_graph
+	return (clustered_graph, indexMapping)
 
 def normalize_L(L):
 	d = np.array([L[i][i] for i in range(len(L))])
