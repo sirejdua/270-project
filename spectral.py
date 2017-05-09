@@ -8,6 +8,7 @@ def spectral_cluster(L,k):
 	spectral = SpectralClustering(n_clusters=k,
 		eigen_solver='arpack',
 		affinity='precomputed')
+	A = adj_mat(L)
 	spectral.fit(A)
 	return spectral.labels_
 
@@ -28,6 +29,11 @@ def normalize_L(L):
 	D_neg_half = np.diag(d_neg_half)
 	normalized_L = D_neg_half.dot(L).dot(D_neg_half)
 	return normalized_L
+
+def adj_mat(L):
+	d = np.array([L[i][i] for i in range(len(L))])
+	D = np.diag(d)
+	return D - L
 
 def redrawGraph(L,new_labels):
 	"""
@@ -162,4 +168,5 @@ if __name__ == '__main__':
 				[0,0,1,-1],
 				[0,0,-1,1]], dtype='float')
 	L1 = createGrid(25)
-	spectral_cluster(L1[0],25)
+	print(spectral_cluster(L1[0],25))
+
