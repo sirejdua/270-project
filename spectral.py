@@ -14,7 +14,7 @@ def spectral_cluster(L,k):
 
 def reduce_graph(L, Vb, num_clusters, cluster_algorithm=spectral_cluster):
 	small_L,mapping_new_old,Vb_edge_list = remove_vertices(L,Vb)
-	cluster_assignments = cluster_algorithm(small_L, num_clusters)
+	cluster_assignments = cluster_algorithm(small_L, num_clusters).tolist()
 	num_clusters = max(cluster_assignments) + 1
 	i = 0
 	for v in sorted(Vb):
@@ -44,17 +44,14 @@ def redrawGraph(L,new_labels):
 	new graph is e-f
 	"""
 	num_labels = len(set(new_labels))
-	adjacency_list = defaultdict(list)
 	new_adjacency_list = defaultdict(lambda:defaultdict(int))
-	new_L = np.zeros((num_labels,num_labels))
+	new_A = np.zeros((num_labels,num_labels))
 	for i in range(len(L)):
 		for j in range(len(L)):
-			if (i != j and L[i][j] != 0):
-				new_adjacency_list[new_labels[i]][new_labels[j]] += 1
-	for i in range(num_labels):
-		for j in range(num_labels):
-			new_L[i][j] = new_adjacency_list[new_labels[i]][new_labels[j]]
-	return new_L
+			if new_labels[i] != new_labels[j]:
+				new_A[new_labels[i]][new_labels[j]] -= L[i][j]
+	new_D = np.diag(np.sum(new_A, axis = 0))
+	return new_D - new_A
 
 def remove_vertices(L,Vb):
 	"""
