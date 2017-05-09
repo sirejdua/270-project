@@ -1,7 +1,30 @@
 import numpy as np
-from sklearn.cluster import KMeans
 from sklearn.cluster import SpectralClustering
 from collections import defaultdict
+
+from tensionOptimizer import findOptimalTension as fot
+from stableState import findStableState as fss
+
+def estimateOptimalTension(L, boundaryConditions, tensionPoint, cutPoint, tensionRadius, num_clusters = 100):
+	"""Estimates the optimal tension to be applied to the tension point by reducing the graph
+		via spectral clustering, then finding the optimal tension on the reduced graph"""
+	Vb = []
+	for condition in boundaryConditions:
+		Vb.append(condition[0])
+	Vb += [tensionPoint, cutPoint]
+	reducedL, mapping = reduce_graph(L, Vb, num_clusters)
+	newBC = boundaryConditions[:]
+	for i in range(len(newBC)):
+		newBC[i] = (mapping[newBC[i][0]], newBC[i][1]) # update the boundary conditions to new indices
+	estOptimal = fot(reducedL, newBC, mapping[tensionPoint], mapping[cutPoint], tensionRadius)
+	restingPos = fss(L, boundaryConditions)[tensionPoint]
+	if np.linalg.norm(estOptimal - restingPos) > tensionRadius:
+		# because we were working with a different graph, the estimated tension point might be too far away
+		# in this case, we have to rescale it to make it legal
+		diff = estOptimal - restingPos
+		diff = diff * (tensionRadius / np.linalg.norm(diff))
+		estOptimal = restingPos + diff
+	return estOptimal
 
 def spectral_cluster(L,k):
 	normalized_L = normalize_L(L)
