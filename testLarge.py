@@ -1,5 +1,7 @@
 from stableState import findStableState as fss
 from tensionOptimizer import findOptimalTension as fot
+from tensionOptimizer import getObjectiveFn as gof
+from spectral import estimateOptimalTension as eot
 
 import numpy as np
 import sys
@@ -60,15 +62,35 @@ L, boundaries = createGrid(25)
 start = time.time()
 stableState = fss(L, boundaries)
 end = time.time()
-print(stableState)
-print("Found in time " + str(end - start) + "\n")
+print(stableState[301])
+print("Stable State found in time " + str(end - start) + "\n")
 sys.stdout.flush()
 start = time.time()
 optTension = fot(L, boundaries, 301, 300, 1.0)
 end = time.time()
 print(optTension)
-print("Found in time " + str(end - start) + "\n")
+print("Tension found in time " + str(end - start))
 sys.stdout.flush()
+tempB = boundaries[:]
+tempB.append((301, optTension))
+obVal = gof(L, tempB, 300)
+print("Value of tension: " + str(obVal) + "\n")
+sys.stdout.flush()
+start = time.time()
+estOptTension = eot(L, boundaries, 301, 300, 1.0)
+end = time.time()
+print("Estimated tension in time " + str(end - start) + "\n")
+sys.stdout.flush()
+tempB = boundaries[:]
+tempB.append((301, estOptTension))
+obVal = gof(L, tempB, 300)
+print("Value of tension: " + str(obVal) + "\n")
+tempB = boundaries[:]
+tempB.append((301, stableState[301]))
+obVal = gof(L, tempB, 300)
+print("Value of tension: " + str(obVal) + "\n")
+
+sys.exit(0)
 
 # do a 10 x 10 grid
 L, boundaries = createGrid(10)
