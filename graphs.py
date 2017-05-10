@@ -16,7 +16,7 @@ clusterNums = [10, 25, 50, 100, 200, 300] # the number of clusters to use
 L, boundaries = createGrid(25)
 stableState = fss(L, boundaries)
 
-speedups = [] # time taken for reduced graph / time taken for original graph
+speedups = [] # time taken for original graph / time taken for reduced graph
 badnessRatios = [] # (objective fn for exact - objective fn for estimate) / (objective fn for exact - objective fn for no tension)
 
 for cutPoint, tensionPoint in zip(cutPoints, tensionPoints):
@@ -34,7 +34,7 @@ for cutPoint, tensionPoint in zip(cutPoints, tensionPoints):
 		start = time.time()
 		estTension = eot(L, boundaries, tensionPoint, cutPoint, 1.0, numClusters)
 		end = time.time()
-		speedups.append((end - start) / exactTime)
+		speedups.append(exactTime / (end - start))
 		tempB = boundaries[:]
 		tempB.append((tensionPoint, estTension))
 		estVal = gof(L, tempB, cutPoint)
