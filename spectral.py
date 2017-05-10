@@ -1,7 +1,30 @@
 import numpy as np
-from sklearn.cluster import KMeans
 from sklearn.cluster import SpectralClustering
 from collections import defaultdict
+
+from tensionOptimizer import findOptimalTension as fot
+from stableState import findStableState as fss
+
+def estimateOptimalTension(L, boundaryConditions, tensionPoint, cutPoint, tensionRadius, num_clusters = 100):
+	"""Estimates the optimal tension to be applied to the tension point by reducing the graph
+		via spectral clustering, then finding the optimal tension on the reduced graph"""
+	Vb = []
+	for condition in boundaryConditions:
+		Vb.append(condition[0])
+	Vb += [tensionPoint, cutPoint]
+	reducedL, mapping = reduce_graph(L, Vb, num_clusters)
+	newBC = boundaryConditions[:]
+	for i in range(len(newBC)):
+		newBC[i] = (mapping[newBC[i][0]], newBC[i][1]) # update the boundary conditions to new indices
+	estOptimal = fot(reducedL, newBC, mapping[tensionPoint], mapping[cutPoint], tensionRadius)
+	restingPos = fss(L, boundaryConditions)[tensionPoint]
+	if np.linalg.norm(estOptimal - restingPos) > tensionRadius:
+		# because we were working with a different graph, the estimated tension point might be too far away
+		# in this case, we have to rescale it to make it legal
+		diff = estOptimal - restingPos
+		diff = diff * (tensionRadius / np.linalg.norm(diff))
+		estOptimal = restingPos + diff
+	return estOptimal
 
 def spectral_cluster(L,k):
 	normalized_L = normalize_L(L)
@@ -14,14 +37,16 @@ def spectral_cluster(L,k):
 
 def reduce_graph(L, Vb, num_clusters, cluster_algorithm=spectral_cluster):
 	small_L,mapping_new_old,Vb_edge_list = remove_vertices(L,Vb)
-	cluster_assignments = cluster_algorithm(small_L, num_clusters)
+	cluster_assignments = cluster_algorithm(small_L, num_clusters).tolist()
 	num_clusters = max(cluster_assignments) + 1
 	i = 0
+	indexMapping = {} # map boundary points to their new indices
 	for v in sorted(Vb):
 		cluster_assignments.insert(v, num_clusters + i)
+		indexMapping[v] = num_clusters + i
 		i += 1
 	clustered_graph = redrawGraph(L,cluster_assignments)
-	return clustered_graph
+	return (clustered_graph, indexMapping)
 
 def normalize_L(L):
 	d = np.array([L[i][i] for i in range(len(L))])
@@ -44,17 +69,14 @@ def redrawGraph(L,new_labels):
 	new graph is e-f
 	"""
 	num_labels = len(set(new_labels))
-	adjacency_list = defaultdict(list)
 	new_adjacency_list = defaultdict(lambda:defaultdict(int))
-	new_L = np.zeros((num_labels,num_labels))
+	new_A = np.zeros((num_labels,num_labels))
 	for i in range(len(L)):
 		for j in range(len(L)):
-			if (i != j and L[i][j] != 0):
-				new_adjacency_list[new_labels[i]][new_labels[j]] += 1
-	for i in range(num_labels):
-		for j in range(num_labels):
-			new_L[i][j] = new_adjacency_list[new_labels[i]][new_labels[j]]
-	return new_L
+			if new_labels[i] != new_labels[j]:
+				new_A[new_labels[i]][new_labels[j]] -= L[i][j]
+	new_D = np.diag(np.sum(new_A, axis = 0))
+	return new_D - new_A
 
 def remove_vertices(L,Vb):
 	"""

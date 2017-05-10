@@ -1,5 +1,11 @@
 import numpy as np
 
+def findPotential(L, boundaryConditions, Minv = None):
+	"""Returns the potential stored in the system given a Laplacian and boundary conditions
+	Note that boundaryConditions should also include the tensioning point"""
+	X = findStableState(L, boundaryConditions, Minv)
+	return np.trace(X.T.dot(L).dot(X))
+
 def findMinv(L, boundaryConditions):
 	"""Given the Laplacian of a graph and its boundary conditions, returns the inverse of the M matrix
 	Calling this function once then using Minv many times should be faster than repeated calculations"""

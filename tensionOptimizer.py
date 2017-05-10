@@ -1,9 +1,31 @@
 import numpy as np
 from stableState import findStableState as fss
 from stableState import findMinv as fmi
+from stableState import findPotential as fp
 
 import matplotlib.pyplot as plt
 import sys
+
+def getObjectiveFn(L, boundaryConditions, cutPoint, Minv = None, MinvPrime = None):
+		"""Calculates the objective function Tr(X^TLX) - Tr(X'^TL'X')
+		Note that the tension position should be included in boundaryConditions"""
+		newBoundaries = boundaryConditions[:] # only need a shallow copy
+		prePotential = fp(L, newBoundaries, Minv)
+		LPrime = getLPrime(L, cutPoint)
+		# all indices in L' larger than cut point are decreased by 1 b/c we removed cut point
+		for i in range(len(newBoundaries)):
+			if newBoundaries[i][0] > cutPoint:
+				newBoundaries[i] = (newBoundaries[i][0] - 1, newBoundaries[i][1])
+		postPotential = fp(LPrime, newBoundaries, MinvPrime)
+		return prePotential - postPotential
+
+def getLPrime(L, cutPoint):
+		"""Returns L', which is the Laplacian for the post-cut graph"""
+		LPrime = np.copy(L)
+		LPrime += np.diag(LPrime[cutPoint]) # get rid of any edges from the cut point to any other point
+		LPrime = np.delete(LPrime, cutPoint, axis = 0) # get rid of the cut point's row
+		LPrime = np.delete(LPrime, cutPoint, axis = 1) # get rid of the cut point's column
+		return LPrime
 
 def findOptimalTension(L, boundaryConditions, tensionPoint, cutPoint, tensionRadius):
 	"""Uses gradient descent to find the best way of tensioning the given point
